@@ -1,0 +1,54 @@
+name: Deploy ALONE Music Bot
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v3
+
+    - name: List files (debug)
+      run: ls -la
+
+    - name: Install system packages
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y unzip ffmpeg python3-pip p7zip-full
+
+    - name: Extract ALONE.210
+      run: |
+        if [ -f "ALONE.zip" ]; then
+          file ALONE.zip # Check file type
+          unzip ALONE.zip -d ALONE || 7z x ALONE.zip -oALONE || echo "Extraction failed"
+          cd ALONE
+        else
+          echo "Error: ALONE.zip not found!"
+          exit 1
+        fi
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        fi
+
+    - name: Start the bot
+      run: |
+        python3 -m ALONE
+
+    # Remove the infinite loop (not recommended for GitHub Actions)
+    # - name: Keep alive
+    #   run: while true; do sleep 60; done
+
